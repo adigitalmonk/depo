@@ -83,15 +83,21 @@ define("MyClass", () => new MyClass());
 // Will always return the same instance
 // Class instances are objects, not functions.
 define("MyClass", new MyClass());
+
+// If you'd like to have grab some dependencies out of the container...
+define("MyClass", (someConfig) => new MyClass(), ["someConfig"]); // Factory
+define("MyClass", (someConfig) => new MyClass(), ["someConfig"], {
+  eager: true,
+}); // Instance
 ```
 
 #### Caveats
 
-Dependencies can be of any type, with one minor caveat: A limitation stemming
+Dependencies can be of any type with one minor caveat; a limitation stemming
 from the nature of JavaScript classes. Because both a class and a function are
-of type `function`, if you want to register a class as a dependency, it has to
-be wrapped in a function. Otherwise, the resolver will fail when resolving the
-dependency.
+of type `function`. If you want to register just a class as a dependency, it has
+to be wrapped in a function. Otherwise, the resolver will fail when resolving
+the dependency.
 
 ```javascript
 class MyClass {}
@@ -112,7 +118,64 @@ you try to inject a circular dependency, your application will crash.
 
 ### Providing Dependencies
 
-TBD.
+In order to make the most out of the container, the `provide` function allows us
+to inject function calls with items from our container. After resolving the
+dependencies, it will call the provided callback with the dependencies as the
+arguments in order. This is essentially the same as the `define` functionality,
+except that it will return the result to you.
+
+```javascript
+define("salution", "Hello");
+const greeting = provide(
+  ["salutation"],
+  (salutation) => `${salutation}, world!`,
+);
+```
+
+The real value here is to generate factory methods which inject dependencies
+into closures.
+
+Here's an example that's a bit more realistic.
+
+```javascript
+// redis.ts
+import { connect } from "https://deno.land/x/redis/mod.ts";
+const config = {
+  hostname: "127.0.0.1",
+  port: 6379,
+};
+
+export default function openRedis(define) {
+  // Add a container instance named 'redis' which is a connection to the redis server
+  define("redis", await connect(config));
+}
+
+// server.ts
+import { Application } from "https://deno.land/x/oak/mod.ts";
+import depo from "https://github.com/adigitalmonk/depo/raw/main/mod.ts";
+import openRedis from "./redis.ts";
+
+const { define, provide } = depo();
+const app = new Application();
+
+// Pass the `define` method over to another method to prepare our dependencies.
+openRedis(define);
+
+// Create some controller that returns a closure, allowing us to inject
+// only the dependencies we need to exist for it.
+const redisStatusController = (redis) =>
+  (ctx) => {
+    ctx.response.body = `Redis is ${
+      redis.isConnected() ? "healthy" : "unhealthy"
+    }`;
+  };
+
+// Set up the application with the controller we created
+// `provide` will inject redis into the first argument of `redisStatusController`
+const app = new Application();
+app.use(provide(["redis"], redisStatusController));
+await app.listen({ port: 8000 });
+```
 
 ### Cloning Containers
 
