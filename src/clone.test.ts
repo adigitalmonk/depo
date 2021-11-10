@@ -98,3 +98,24 @@ Deno.test("Clone :: Actions on the clone don't affect the original", () => {
   assertEquals(store["dummy2"].resolveable, dummyValue);
   assertEquals(clonedStore["dummy2"], undefined);
 });
+
+interface TestObject {
+  test?: boolean;
+}
+Deno.test("Clone :: Object references are preserved after cloning", () => {
+  const store: Store = {};
+  const define = definer(store);
+  const myObject: TestObject = {};
+  define("myObject", myObject);
+  const clonedStore = clone(store);
+
+  myObject["test"] = true;
+
+  assert((store["myObject"].resolveable as TestObject).test);
+  assert((clonedStore["myObject"].resolveable as TestObject).test);
+
+  assertEquals(
+    store["myObject"].resolveable,
+    clonedStore["myObject"].resolveable,
+  );
+});

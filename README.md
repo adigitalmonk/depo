@@ -103,7 +103,7 @@ the dependency.
 class MyClass {}
 
 // This will fail
-// MyClass, being a class, is considered a function (but can't be called)
+// MyClass, being a class, is considered a function (but can't be called without `new`)
 define("MyClass", MyClass);
 
 // This will not fail
@@ -134,6 +134,8 @@ const greeting = provide(
 
 The real value here is to generate factory methods which inject dependencies
 into closures.
+
+**Note: Undeclared dependencies will resolve as `null`**
 
 Here's an example that's a bit more realistic.
 
@@ -179,4 +181,24 @@ await app.listen({ port: 8000 });
 
 ### Cloning Containers
 
-TBD.
+The `clone` function will create a duplicate container with new versions of the
+same dependencies. This can be useful if you want to have a child container with
+extra dependencies not available to the source.
+
+```javascript
+const { define, provide, clone } = depo();
+define("test1", "test1");
+
+const { define: defineClone, provide: provideClone } = clone();
+defineClone("test2", "test2");
+
+provide(["test1"], (testValue: string) => testValue); // 'test1'
+provideClone(["test1"], (testValue: string) => testValue); // "test1"
+
+provide(["test2"], (testValue: string) => testValue); // null
+provideClone(["test2"], (testValue: string) => testValue); // 'test2'
+```
+
+Note though, that items in the container will have the same actual reference to
+the item. E.g., an object stored as an instance, when cloned, will be the same
+object in both containers.
