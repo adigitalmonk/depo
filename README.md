@@ -11,8 +11,7 @@ other function calls.
 Currently, only Depo is intended to be used with Deno.
 
 ```javascript
-// Eventually, grab tagged version isntead of main / nightly
-import depo from "https://github.com/adigitalmonk/depo/raw/main/mod.ts";
+import depo from "https://github.com/adigitalmonk/depo/raw/v1.0.0/mod.ts";
 ```
 
 Installation instructions for Node are coming soon.
