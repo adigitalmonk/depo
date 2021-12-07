@@ -8,7 +8,7 @@ other function calls.
 
 ## Installation
 
-Currently, only Depo is intended to be used with Deno.
+Currently, Depo is intended to be used with Deno.
 
 ```javascript
 import depo from "https://github.com/adigitalmonk/depo/raw/v1.0.0/mod.ts";
